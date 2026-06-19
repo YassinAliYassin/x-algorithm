@@ -229,11 +229,10 @@ impl PhoenixCandidatePipeline {
                 user_inferred_gender_store_client,
                 user_inferred_gender_grpc_client,
             )),
+            Box::new(ImpressedPostsQueryHydrator {
+                client: impressed_posts_client,
+            }),
         ];
-
-        let _impressed_posts_hydrator = ImpressedPostsQueryHydrator {
-            client: impressed_posts_client,
-        };
 
         let phoenix_source = Box::new(PhoenixSource {
             phoenix_retrieval_client: phoenix_retrieval_client.clone(),
@@ -293,11 +292,12 @@ impl PhoenixCandidatePipeline {
             egress_client: Arc::clone(&egress_client),
         });
         let ranking_scorer = Box::new(RankingScorer);
+        let topic_diversity_scorer = Box::new(crate::scorers::topic_diversity_scorer::TopicDiversityScorer);
         let vm_ranker = Box::new(VMRanker {
             client: vm_ranker_client,
         });
         let scorers: Vec<Box<dyn Scorer<ScoredPostsQuery, PostCandidate>>> =
-            vec![phoenix_scorer, ranking_scorer, vm_ranker];
+            vec![phoenix_scorer, ranking_scorer, topic_diversity_scorer, vm_ranker];
 
         let selector = TopKScoreSelector;
 
